@@ -2,7 +2,8 @@
 """Explain It pipeline — IT/tech term or phrase → ELI5 study post for a 12-year-old.
 
 input/term.md 코드블록에 붙여넣은 기술 용어/문구를 하나의 항목으로 읽어, Claude로
-쉬운 비유·단계별 설명·Mermaid 도식·실생활 예시·퀴즈로 구성된 영문 포스트를 생성한다.
+쉬운 비유·단계별 설명·도식(Mermaid 또는 정밀도가 필요할 때는 SVG)·실생활 예시·퀴즈로
+구성된 영문 포스트를 생성한다.
 
 코드블록 안에서 `---` 만 있는 줄로 구분하면 용어 여러 개를 각각 별도 포스트로
 처리한다. 이미 게시에 사용된 용어(텍스트 해시 기준)는 다시 나타나도 건너뛴다.
@@ -74,7 +75,8 @@ Respond ONLY with JSON in exactly this format, no other text:
  "key_terms": [
    {{"term": "a jargon word or short phrase actually used above", "meaning": "one-line plain-English meaning"}}
  ],
- "mermaid": "valid Mermaid flowchart source (no code fences), 4-8 nodes, short plain-English labels that mirror the steps above",
+ "diagram_type": "\"mermaid\" (default) or \"svg\" — use svg only when a precise, custom illustration explains the idea far better than a flowchart",
+ "diagram": "if diagram_type is mermaid: valid Mermaid flowchart source (no code fences), 4-8 nodes, short plain-English labels that mirror the steps above. If diagram_type is svg: one complete, self-contained <svg>...</svg> element",
  "why_it_matters": "2-3 sentences on real-world impact, in plain English",
  "real_world_examples": ["short recognizable example 1", "short recognizable example 2", "short recognizable example 3"],
  "quiz": [
@@ -90,9 +92,18 @@ Requirements: 3-5 "how_it_works" steps in the correct technical order; 3-6 "key_
 (every jargon word you used anywhere above must be explained here); 2-4
 "real_world_examples" a middle-schooler would recognize (an app, game, or everyday
 situation); 3-5 quiz questions.
-Mermaid rules: plain "flowchart TD" or "flowchart LR" syntax only, short node labels
-(<=6 words) in plain English that echo "how_it_works", no styling/classDef, no markdown
-code fences in the value — just the raw Mermaid source.
+Diagram rules: default to "mermaid" — plain "flowchart TD" or "flowchart LR" syntax only,
+short node labels (<=6 words) in plain English that echo "how_it_works", no
+styling/classDef, no markdown code fences in the value, just the raw Mermaid source.
+Switch to "svg" ONLY when you need precise visual/spatial detail a flowchart cannot
+express — comparing sizes or shapes, a layered/nested stack, a before/after picture, a
+geometric or spatial relationship. When you do, emit clean, minimal, self-contained SVG:
+a `viewBox` attribute instead of fixed pixel width/height, simple flat shapes, readable
+`<text>` labels, a small color palette that stays legible on both light and dark
+backgrounds (e.g. mid-tone fills with a dark stroke), no `<script>`, no event-handler
+attributes, no external references (no `<image>`, no external `href`). Never mix formats
+— "diagram" holds either valid Mermaid or valid SVG, matching "diagram_type", no code
+fences either way.
 Quiz rules: every question is FILL-IN-THE-BLANK — a natural sentence with "____" marking
 the blank. Every option (3-4 per question) MUST be taken verbatim from this post's
 "key_terms" — never invent outside words. Exactly one option fits the blank; the
@@ -194,7 +205,7 @@ def parse_result(text: str) -> dict | None:
         data = json.loads(match.group(0))
     except json.JSONDecodeError:
         return None
-    required = ("title", "eli5", "analogy", "mermaid")
+    required = ("title", "eli5", "analogy")
     if not all(isinstance(data.get(k), str) and data.get(k).strip() for k in required):
         return None
     for key in ("how_it_works", "key_terms", "real_world_examples", "quiz"):
@@ -205,9 +216,21 @@ def parse_result(text: str) -> dict | None:
     data["analogy_title"] = str(data.get("analogy_title") or "The Big Idea").strip()
     data["why_it_matters"] = str(data.get("why_it_matters") or "").strip()
     data["fun_fact"] = str(data.get("fun_fact") or "").strip()
-    mermaid = data["mermaid"].strip()
-    mermaid = re.sub(r"^```[a-zA-Z]*\n|\n?```$", "", mermaid).strip()
-    data["mermaid"] = mermaid
+
+    diagram_type = str(data.get("diagram_type") or "mermaid").strip().lower()
+    if diagram_type not in ("mermaid", "svg"):
+        diagram_type = "mermaid"
+    diagram = data.get("diagram")
+    if not isinstance(diagram, str) or not diagram.strip():
+        return None
+    diagram = re.sub(r"^```[a-zA-Z]*\n|\n?```$", "", diagram.strip()).strip()
+    if diagram_type == "svg":
+        diagram = sanitize_svg(diagram)
+        if "<svg" not in diagram.lower():
+            return None
+    data["diagram_type"] = diagram_type
+    data["diagram"] = diagram
+
     tags = data.get("tags") or []
     data["tags"] = [slugify(str(t)) for t in tags[:3] if str(t).strip()] or ["explained-simply"]
     return data
@@ -278,6 +301,21 @@ def html_escape(s: str) -> str:
     return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 
 
+_SVG_SCRIPT_RE = re.compile(r"<script\b.*?</script\s*>", re.IGNORECASE | re.DOTALL)
+_SVG_FOREIGN_RE = re.compile(r"<foreignObject\b.*?</foreignObject\s*>", re.IGNORECASE | re.DOTALL)
+_SVG_EVENT_ATTR_RE = re.compile(r'''\s+on[a-zA-Z]+\s*=\s*(".*?"|'.*?')''', re.IGNORECASE | re.DOTALL)
+_SVG_JS_HREF_RE = re.compile(r'''((?:xlink:)?href\s*=\s*)(["'])\s*javascript:[^"']*\2''', re.IGNORECASE)
+
+
+def sanitize_svg(svg: str) -> str:
+    """모델이 생성한 SVG에서 실행 가능한 조각만 제거한다 (게시 전 방어 계층)."""
+    svg = _SVG_SCRIPT_RE.sub("", svg)
+    svg = _SVG_FOREIGN_RE.sub("", svg)
+    svg = _SVG_EVENT_ATTR_RE.sub("", svg)
+    svg = _SVG_JS_HREF_RE.sub(r"\1\2#\2", svg)
+    return svg.strip()
+
+
 def write_post(sentence: str, result: dict, date: datetime, source: str | None = None) -> Path:
     CONTENT_DIR.mkdir(parents=True, exist_ok=True)
     base = f"{date.date().isoformat()}-{slugify(result['title'])}"
@@ -301,8 +339,13 @@ def write_post(sentence: str, result: dict, date: datetime, source: str | None =
             lines.append(f"{i}. **{step}** — {text}")
         sections.append("\n".join(lines) + "\n")
 
-    if result["mermaid"]:
-        sections.append(f"## {HEADING_DIAGRAM}\n\n```mermaid\n{result['mermaid']}\n```\n")
+    if result["diagram"]:
+        if result["diagram_type"] == "svg":
+            sections.append(
+                f"## {HEADING_DIAGRAM}\n\n<div class=\"diagram-svg\">\n{result['diagram']}\n</div>\n"
+            )
+        else:
+            sections.append(f"## {HEADING_DIAGRAM}\n\n```mermaid\n{result['diagram']}\n```\n")
 
     if result["key_terms"]:
         lines = [f"## {HEADING_KEY_TERMS}\n"]

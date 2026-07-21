@@ -17,7 +17,8 @@ pipeline/generate.py
   - 이미 게시된 용어(해시 기준)는 건너뜀 — pipeline/state.json 으로 추적
   - 입력이 비어 있으면 아무것도 하지 않고 종료 (폴백 없음, 후킹 전용 모드)
   - Claude가 용어를 분석해 섹션 구성:
-      🤔 What Is It? / 🧩 (analogy) / ⚙️ How It Works / 🗺️ Picture It (Mermaid) /
+      🤔 What Is It? / 🧩 (analogy) / ⚙️ How It Works /
+      🗺️ Picture It (Mermaid, 정밀한 그림이 필요하면 SVG로 대체) /
       🔑 Key Words / 🌍 Why It Matters / 🔍 Where You'll See This /
       ✅ Check Yourself (토글 퀴즈) / 🎉 Fun Fact
   - content/posts/YYYY-MM-DD-....md 로 저장
@@ -87,7 +88,7 @@ gh secret set CLAUDE_CODE_OAUTH_TOKEN --repo jeonck/explainit
 | `layouts/partials/extend_head.html` | Mermaid.js 로드 + 라이트/다크 테마 동기화 |
 | `assets/css/extended/cards.css` | 카드 그리드 레이아웃 + PaperMod 여백 버그 수정 |
 | `assets/css/extended/quiz.css` | Check Yourself 토글 스타일 |
-| `assets/css/extended/mermaid.css` | Picture It 다이어그램 컨테이너 스타일 |
+| `assets/css/extended/diagram.css` | Picture It 다이어그램 컨테이너 스타일 (Mermaid + SVG 공용) |
 | `static/CNAME` | 커스텀 도메인 (explainit.metacog.co.kr) |
 
 ## 로컬에서 테스트
