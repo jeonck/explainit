@@ -13,5 +13,4 @@
     (text-hash dedup), so you can leave old entries in place.
 -->
 ```
-Patroni 기반 분산 PostgreSQL, Patroni HA
 ```
