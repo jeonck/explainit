@@ -13,5 +13,4 @@
     (text-hash dedup), so you can leave old entries in place.
 -->
 ```
-attention is all you need
 ```
