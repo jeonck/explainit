@@ -13,4 +13,5 @@
     (text-hash dedup), so you can leave old entries in place.
 -->
 ```
+network topology (star vs ring vs mesh)
 ```
