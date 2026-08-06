@@ -12,6 +12,7 @@ on:
       - "archetypes/**"
       - "assets/**"
       - "layouts/**"
+      - ".github/workflows/**"
 
 permissions:
   contents: write
@@ -82,7 +83,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+      url: ${{ steps.deployment.outputs.page_url || steps.deployment_retry.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -105,5 +106,15 @@ jobs:
         with:
           path: ./public
 
+      # GitHub Pages가 이전 배포를 "deployment_in_progress"로 붙들고 있다가 타임아웃되는
+      # 일시적 오류가 종종 있다 (직접 커밋한 md 수정 등 배포만 필요한 push에서도 발생).
+      # 첫 시도가 실패하면(보통 타임아웃 시점에 정체된 배포가 자동 취소되므로) 바로 재시도한다
+      # — 사람이 Actions 탭에서 수동으로 "Re-run failed jobs"를 누를 필요가 없어진다.
       - id: deployment
+        continue-on-error: true
+        uses: actions/deploy-pages@v4
+
+      - name: Retry deploy (GitHub Pages transient lock)
+        if: steps.deployment.outcome == 'failure'
+        id: deployment_retry
         uses: actions/deploy-pages@v4

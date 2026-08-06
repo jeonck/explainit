@@ -45,6 +45,21 @@ Hugo build → GitHub Pages 배포
 같은 용어가 다시 게시판에 남아 있어도, 텍스트 해시 기준 dedup으로 재게시되지
 않는다. Actions 탭 → "Explain It Publish" → "Run workflow"로 수동 실행도 가능하다.
 
+### 포스트 오류를 직접 고칠 때 — content/posts/*.md 바로 수정
+
+생성된 포스트 내용에 오류가 있으면 `input/term.md`를 거치지 않고
+`content/posts/`의 해당 `.md` 파일을 GitHub 웹 UI에서 바로 고쳐 커밋해도 된다.
+`content/**` 변경도 push 후킹 대상이라 커밋하는 순간 재빌드·재배포가 시작된다
+(`generate` 단계는 `input/term.md`가 비어 있으면 그냥 스킵하고 지나간다).
+
+배포 단계(`actions/deploy-pages`)는 GitHub Pages가 이전 배포를
+"deployment_in_progress"로 붙든 채 넘어가지 않는 일시적 오류를 가끔 낸다 — 이
+저장소뿐 아니라 어떤 저장소에서도 발생할 수 있는 GitHub 쪽 문제다. 그래서
+`publish.yml`은 첫 배포가 실패하면 자동으로 한 번 더 시도한다(보통 타임아웃
+시점에 정체된 배포가 스스로 취소되므로 재시도가 바로 성공한다) — Actions 탭에서
+수동으로 "Re-run failed jobs"를 누를 필요가 없다. 그래도 두 번 다 실패하면 정말
+조사가 필요한 문제이니 워크플로 로그를 확인한다.
+
 ### 크론 없음 — 후킹 전용 모드
 
 이 사이트는 매일 자동 게시되는 크론이나 입력 없는 날의 폴백 주제가 없다.
