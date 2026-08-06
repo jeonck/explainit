@@ -1,93 +1,94 @@
 ---
-title: "Why Starting Safe Is Smarter Than Removing Danger Later"
+title: "Why Deleting Attack Paths Beats Just Watching Them"
 date: 2026-08-05T08:50:54.475333+09:00
 tags: ["web-security", "owasp", "security-principles"]
 ---
+
 ## 🤔 What Is It?
 
-> **OWASP subtractive security**
+> OWASP subtractive security
 
-Subtractive security means letting everything into a computer system by default and then trying to block the bad stuff — but security experts at OWASP warn this is risky because you can only block dangers you already know about, letting brand-new threats slip right through.
+Subtractive security means removing or restricting the actual paths an attacker could use — unused accounts, old protocols, excess privileges, unnecessary network exposure — instead of just adding more monitoring tools to watch for trouble. OWASP's new Subtractive Security Top 10 argues that deleting a risky path is more effective than merely detecting when someone uses it.
 
-## 🧩 Like a school cafeteria piling everything onto your tray
+## 🧩 Like clearing an overgrown backyard instead of installing more cameras
 
-Imagine the school cafeteria starts every lunch by dumping every single food they have onto your tray — pizza, mystery meat, spoiled milk, stuff you're allergic to, everything. Then a lunch monitor walks by and tries to remove the foods that could hurt you, working from yesterday's list of known bad foods. The problem is the monitor can only take off things already on that list. If a brand-new food showed up today that nobody knew was dangerous, it stays on your tray because no one knew to remove it yet. A much safer cafeteria would start with an empty tray and only add foods already proven safe for you. That 'start empty, only add safe things' approach is exactly what OWASP recommends instead of subtractive security.
+Imagine a backyard with overgrown bushes hiding the fence line, a side gate that never locks, and a shed door that won't quite close. One option is to bolt on more security cameras and motion sensors so you get an alert every time someone sneaks through. That's useful, but the bushes, the broken gate, and the loose door are still there, waiting to be used. A smarter homeowner trims the bushes, fixes the lock, and repairs the door — removing the actual ways in, so there's far less left to watch for in the first place. That "fix the yard, not just the cameras" instinct is exactly what OWASP's subtractive security recommends for computer systems.
 
 ## ⚙️ How It Works
 
-1. **System starts: allow everything** — A system using subtractive security begins wide open — like a tray loaded with every food in the cafeteria. All requests and features are permitted by default from the very first moment.
-2. **Build a blocklist of known dangers** — Security experts write down every bad thing they already know about, creating a blocklist — like the lunch monitor's written list of spoiled foods and known allergens to remove.
-3. **Remove the listed dangers** — The system automatically rejects anything on the blocklist, just like the monitor sweeps flagged items off your tray before you sit down to eat.
-4. **Unknown threats slip through unblocked** — If a new attack appears that nobody has seen before, it is not on the list, so the system lets it in untouched — exactly like a new allergen the monitor has never heard of stays right on your tray.
-5. **OWASP recommends the opposite: additive security** — Instead of starting full and subtracting bad things, OWASP says start with an empty tray and use an allowlist — only adding things proven safe — so anything new and unknown is automatically blocked without needing to know about it first.
+1. Map the existing paths — Security teams first list out accounts, services, trust relationships, privileges, protocols, and network exposure that attackers could potentially use, like walking the yard to spot every weak spot.
+2. Architectural deletion — Wherever possible, remove the path entirely: delete dormant accounts, turn off legacy protocols, revoke unnecessary admin rights, shut down unused services — like tearing out the broken gate altogether.
+3. Architectural constraint — When a path can't be fully removed because the business still needs it, tightly restrict it instead, using network segmentation, private endpoints, conditional access, or permission boundaries — like adding a stronger lock because you still need that gate.
+4. Monitoring and detection come last — Logging, SIEM platforms, and alerts are still valuable, but OWASP places them as the final layer, for whatever risk remains after deletion and constraint — like keeping a camera on the one spot you couldn't fully secure.
+5. Measure the improvement — OWASP introduces the Path Erasure Rate (PER), which tracks what share of known attack paths have actually been structurally eliminated, so teams can prove progress instead of just counting alerts.
 
 ## 🗺️ Picture It
 
 ```mermaid
 flowchart TD
-    A[System starts: allow everything] --> B[Build blocklist of known dangers]
-    B --> C[Block items on the list]
-    C --> D{New unknown threat arrives?}
-    D -- Yes --> E[Slips through unblocked]
-    D -- No, already listed --> F[Correctly blocked]
-    G[Better: start closed deny by default] --> H[Build allowlist of safe things]
-    H --> I[Only approved things get in]
-    I --> J[Unknown threats auto-blocked]
+    A[Map existing attack paths] --> B{Can the path be removed?}
+    B -- Yes --> C[Architectural deletion]
+    B -- No, still needed --> D[Architectural constraint]
+    C --> E[Attack path eliminated]
+    D --> F[Exposure tightly restricted]
+    E --> G[Monitoring covers remaining residual risk]
+    F --> G
+    G --> H[Measure progress with Path Erasure Rate]
 ```
 
 ## 🔑 Key Words
 
-- **OWASP** — Open Web Application Security Project — a nonprofit group of experts who publish free guides and warnings about how to keep software safe
-- **subtractive security** — A strategy that allows everything by default and then tries to remove known dangerous things — like clearing a fully loaded tray rather than building a safe one from scratch
-- **additive security** — A strategy that blocks everything by default and only permits things specifically approved as safe — the opposite of subtractive security
-- **blocklist** — A list of things explicitly forbidden — the system blocks anything that appears on this list
-- **allowlist** — A list of things explicitly permitted — the system only lets through what is on this list and blocks everything else
-- **deny by default** — A security rule that says block everything unless it is specifically approved — the core idea powering additive security
+- OWASP — Open Worldwide Application Security Project — a nonprofit group of experts who publish free guides and warnings about how to keep software safe
+- subtractive security — A strategy that reduces risk by deleting or restricting unnecessary access, services, and privileges rather than only adding monitoring on top of them
+- architectural deletion — Permanently removing an unneeded account, service, protocol, or permission so the path simply no longer exists
+- architectural constraint — Tightly limiting a path that can't be fully removed for business reasons, using segmentation or access restrictions
+- Path Erasure Rate (PER) — A metric measuring what portion of known, eligible attack paths have actually been structurally eliminated
+- attack surface — The full set of points where an unauthorized user could try to get into a system
 
 ## 🌍 Why It Matters
 
-Most real-world security breaches happen because attackers invent a new trick the blocklist has never seen before — subtractive security is always playing catch-up. OWASP's guidelines push developers toward deny-by-default allowlisting instead, so even totally new attacks are blocked automatically without needing to update any list. Understanding this difference helps explain why well-built apps and websites are designed the careful, additive way.
+Piling on more alerts and dashboards doesn't remove the underlying exposure — the risky account, protocol, or permission is still sitting there waiting to be found. OWASP's Subtractive Security Top 10 pushes teams to delete or constrain those paths first, so entire categories of attack become impossible rather than just easier to notice after the fact.
 
 ## 🔍 Where You'll See This
 
-- An email spam filter that only blocks senders on a known-bad list (subtractive) vs. one that only delivers mail from contacts you have approved (additive)
-- A game's chat filter that tries to catch every bad word it knows about — but brand-new slang slips through until someone updates the list
-- A school's website blocker that bans known bad sites but lets through any new site it has never catalogued before
+- Turning off an old remote-access protocol nobody uses anymore, instead of just logging every login attempt against it
+- Deleting a former employee's dormant account, instead of relying on alerts to flag suspicious activity from it
+- Removing local admin rights from everyday user accounts, instead of only monitoring what admins do with them
 
 ## ✅ Check Yourself
 
-**Q1.** Subtractive security relies on a ____ to stop attacks it already knows about, but struggles the moment a new attack appears.
+Q1. In OWASP's Subtractive Security Top 10, removing a path entirely — like deleting a dormant account — is called ____.
 
-- allowlist
-- blocklist
-- deny by default
+- architectural constraint
+- architectural deletion
+- monitoring and detection
 
-<details><summary>Show answer</summary><p><strong>blocklist</strong> — A blocklist holds the known-bad things to remove; an allowlist and deny by default both describe the safer additive approach that starts closed instead of open.</p></details>
+<details><summary>Show answer</summary><p><strong>architectural deletion</strong> — This means permanently removing the unnecessary path itself; architectural constraint is for paths that can't be removed, and monitoring only watches for activity on paths that still exist.</p></details>
 
-**Q2.** OWASP recommends ____, where you start with nothing allowed and only open up what is proven safe.
+Q2. Which comes last in OWASP's recommended hierarchy of Delete, Constrain, Monitor?
 
+- Architectural deletion
+- Architectural constraint
+- Monitoring and detection
+
+<details><summary>Show answer</summary><p><strong>Monitoring and detection</strong> — OWASP treats logging and alerting as the last line of defense for whatever risk remains, not the first response to a risky path.</p></details>
+
+Q3. A backyard where the broken gate is fixed and the bushes are trimmed, rather than just adding more cameras, best represents ____.
+
+- monitoring and detection
 - subtractive security
-- additive security
-- blocklist
+- Path Erasure Rate
 
-<details><summary>Show answer</summary><p><strong>additive security</strong> — Additive security starts closed and only adds approved safe things; subtractive security starts open and tries to remove bad things, which is what OWASP warns against.</p></details>
+<details><summary>Show answer</summary><p><strong>subtractive security</strong> — Fixing the actual weak points removes the path an intruder could use, which is the core idea behind subtractive security.</p></details>
 
-**Q3.** A cafeteria tray that starts completely empty and only gets foods already approved for you is a perfect example of ____.
+Q4. What does the Path Erasure Rate (PER) measure?
 
-- deny by default
-- subtractive security
-- blocklist
+- How many alerts a security team receives per day
+- The share of known attack paths that have been structurally removed
+- The number of employees trained on security policy
 
-<details><summary>Show answer</summary><p><strong>deny by default</strong> — Deny by default means nothing is allowed until explicitly approved — exactly what the empty-tray-first approach represents; subtractive security is the full-tray approach.</p></details>
-
-**Q4.** When a security team creates an ____, only the items explicitly on that list are permitted into the system.
-
-- OWASP
-- allowlist
-- subtractive security
-
-<details><summary>Show answer</summary><p><strong>allowlist</strong> — An allowlist names exactly what is permitted and blocks everything else; OWASP is an organization, not a list, and subtractive security is a strategy, not a list.</p></details>
+<details><summary>Show answer</summary><p><strong>The share of known attack paths that have been structurally removed</strong> — PER quantifies real structural progress, not activity like alert volume or training counts.</p></details>
 
 ## 🎉 Fun Fact
 
-> The very first computer worm to cause massive internet damage — the Morris Worm in 1988 — spread partly because systems trusted network connections by default (pure subtractive thinking). It infected roughly 6,000 machines, which was about 10% of the entire internet at the time!
+> Widespread worms like Code Red and Nimda in 2001 spread largely because many Windows servers shipped with extra services enabled by default. It was a major reason Microsoft later built "attack surface reduction" into its security practices — trimming away unnecessary default features instead of just adding patches after the fact.
