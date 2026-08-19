@@ -13,5 +13,4 @@
     (text-hash dedup), so you can leave old entries in place.
 -->
 ```
-Talos is a modern OS for running Kubernetes: secure, immutable, and minimal. Talos is fully open source,
 ```
